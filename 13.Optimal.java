@@ -1,51 +1,91 @@
+// Sample Input :
+// Enter number of frames: 3
+// Enter number of pages: 5
+// Enter page reference string:
+// 1 2 3 4 5
+
 import java.util.*;
 
-public class Optimal {
+public class Optimal_PageReplacement {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
-        System.out.print("Frames: ");
-        int F = sc.nextInt();
-        System.out.print("Length of reference string: ");
+
+        // Input: Number of frames
+        System.out.print("Enter number of frames: ");
+        int frames = sc.nextInt();
+
+        // Input: Number of pages
+        System.out.print("Enter number of pages: ");
         int n = sc.nextInt();
-        int[] ref = new int[n];
-        System.out.println("Enter reference string:");
-        for (int i = 0; i < n; i++) ref[i] = sc.nextInt();
 
-        List<Integer> frames = new ArrayList<>(F);
-        int faults = 0;
-
-        System.out.println("\nOptimal Page Replacement");
-        System.out.println("Step\tRef\tAction\t\tFrames");
-        int step = 1;
-
+        int[] pages = new int[n]; // Page reference string
+        System.out.println("Enter page reference string:");
         for (int i = 0; i < n; i++) {
-            int p = ref[i];
-            if (frames.contains(p)) {
-                System.out.printf("%d\t%d\tHIT\t\t%s%n", step++, p, frames.toString());
-                continue;
-            }
-            faults++;
-            if (frames.size() < F) {
-                frames.add(p);
-                System.out.printf("%d\t%d\tFAULT(add)\t%s%n", step++, p, frames.toString());
-            } else {
-                // choose victim: page used farthest in future (or never)
-                int victimIdx = -1, farthest = -1;
-                for (int f = 0; f < frames.size(); f++) {
-                    int page = frames.get(f);
-                    int nextUse = Integer.MAX_VALUE;
-                    for (int k = i + 1; k < n; k++) {
-                        if (ref[k] == page) { nextUse = k; break; }
-                    }
-                    if (nextUse > farthest) { farthest = nextUse; victimIdx = f; }
-                }
-                int victim = frames.get(victimIdx);
-                frames.set(victimIdx, p);
-                System.out.printf("%d\t%d\tFAULT(%d→%d)\t%s%n", step++, p, victim, p, frames.toString());
-            }
+            pages[i] = sc.nextInt();
         }
 
-        System.out.println("Total Page Faults: " + faults);
-        sc.close();
+        int[] frame = new int[frames]; // Frame array
+        Arrays.fill(frame, -1);        // Initialize frames to -1 (empty)
+
+        int pageFaults = 0;
+
+        // Optimal Page Replacement Logic
+        for (int i = 0; i < n; i++) {
+            int page = pages[i];
+            boolean hit = false;
+
+            // Check if page is already in frame
+            for (int j = 0; j < frames; j++) {
+                if (frame[j] == page) {
+                    hit = true;
+                    break;
+                }
+            }
+
+            // If page fault occurs
+            if (!hit) {
+                int replaceIndex = -1;
+                int farthest = -1;
+
+                // Check for free frame
+                for (int j = 0; j < frames; j++) {
+                    if (frame[j] == -1) {
+                        replaceIndex = j;
+                        break;
+                    }
+                }
+
+                // If no free frame, find the page used farthest in future
+                if (replaceIndex == -1) {
+                    for (int j = 0; j < frames; j++) {
+                        int nextUse = Integer.MAX_VALUE;
+                        for (int k = i + 1; k < n; k++) {
+                            if (frame[j] == pages[k]) {
+                                nextUse = k;
+                                break;
+                            }
+                        }
+                        if (nextUse > farthest) {
+                            farthest = nextUse;
+                            replaceIndex = j;
+                        }
+                    }
+                }
+
+                // Replace the selected page
+                frame[replaceIndex] = page;
+                pageFaults++;
+            }
+
+            // Display current frame status
+            System.out.print("Frames: ");
+            for (int f : frame) {
+                System.out.print((f == -1 ? "-" : f) + " ");
+            }
+            System.out.println();
+        }
+
+        // Output total page faults
+        System.out.println("\nTotal Page Faults = " + pageFaults);
     }
 }
