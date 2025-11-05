@@ -1,63 +1,82 @@
 import java.util.*;
 
-public class PriorityNonPreemptive {
+class PriorityNonPreemptive {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
 
-        // 1) INPUT
-        System.out.print("No. of processes: ");
+        System.out.print("Enter number of processes: ");
         int n = sc.nextInt();
 
-        int[] at = new int[n];   // arrival
-        int[] bt = new int[n];   // burst
-        int[] pr = new int[n];   // priority (smaller = higher)
-        int[] wt = new int[n];   // waiting
-        int[] tat = new int[n];  // turnaround
-        boolean[] done = new boolean[n];
-        StringBuilder order = new StringBuilder("|");
+        int[] pid = new int[n];  // Process IDs
+        int[] at = new int[n];   // Arrival Times
+        int[] bt = new int[n];   // Burst Times
+        int[] pr = new int[n];   // Priorities
+        int[] wt = new int[n];   // Waiting Times
+        int[] tat = new int[n];  // Turnaround Times
+        boolean[] completed = new boolean[n]; // Completion flags
 
-        System.out.println("Enter AT BT PR for each process (P1..Pn):");
+        // Input process details
         for (int i = 0; i < n; i++) {
+            System.out.print("Process ID: ");
+            pid[i] = sc.nextInt();
+            System.out.print("Arrival Time: ");
             at[i] = sc.nextInt();
+            System.out.print("Burst Time: ");
             bt[i] = sc.nextInt();
+            System.out.print("Priority (lower = higher priority): ");
             pr[i] = sc.nextInt();
+            System.out.println();
         }
-        sc.close();
 
-        // 2) CORE LOGIC: at each time, pick available process with HIGHEST priority
-        int time = 0, finished = 0;
-        while (finished < n) {
+        int complete = 0, time = 0;
+        ArrayList<Integer> order = new ArrayList<>();
+
+        // Priority Scheduling (Non-Preemptive)
+        while (complete < n) {
             int idx = -1;
-            int best = Integer.MAX_VALUE;    // smaller value = higher priority
+            int highestPriority = Integer.MAX_VALUE;
 
             for (int i = 0; i < n; i++) {
-                if (!done[i] && at[i] <= time) {
-                    if (pr[i] < best) {      // flip sign if larger number = higher priority
-                        best = pr[i];
-                        idx = i;
-                    }
+                if (!completed[i] && at[i] <= time && pr[i] < highestPriority) {
+                    highestPriority = pr[i];
+                    idx = i;
                 }
             }
 
-            if (idx == -1) { time++; continue; }  // no job ready → CPU idle, move time
+            if (idx == -1) { // No process has arrived yet
+                time++;
+                continue;
+            }
 
-            wt[idx]  = time - at[idx];          // waiting before it starts
-            time    += bt[idx];                  // run it to completion (non-preemptive)
-            tat[idx] = wt[idx] + bt[idx];
-            done[idx] = true;
-            finished++;
-            order.append(" P").append(idx + 1).append(" |");
+            // Execute selected process fully (non-preemptive)
+            order.add(pid[idx]);
+            time += bt[idx];
+            tat[idx] = time - at[idx];
+            wt[idx] = tat[idx] - bt[idx];
+            completed[idx] = true;
+            complete++;
         }
 
-        // 3) OUTPUT: per process + averages + simple Gantt order
-        int sumWT = 0, sumTAT = 0;
+        // Calculate averages
+        double avgWT = 0, avgTAT = 0;
         System.out.println("\nPID\tAT\tBT\tPR\tWT\tTAT");
         for (int i = 0; i < n; i++) {
-            sumWT += wt[i]; sumTAT += tat[i];
-            System.out.printf("%d\t%d\t%d\t%d\t%d\t%d%n", (i+1), at[i], bt[i], pr[i], wt[i], tat[i]);
+            avgWT += wt[i];
+            avgTAT += tat[i];
+            System.out.println(pid[i] + "\t" + at[i] + "\t" + bt[i] + "\t" + pr[i] + "\t" + wt[i] + "\t" + tat[i]);
         }
-        System.out.printf("Average WT  : %.2f%n", sumWT / (double) n);
-        System.out.printf("Average TAT : %.2f%n", sumTAT / (double) n);
-        System.out.println("Order (Gantt): " + order);
+
+        avgWT /= n;
+        avgTAT /= n;
+
+        // Display Execution Order
+        System.out.println("\nExecution Order:");
+        for (int x : order) {
+            System.out.print("P" + x + " ");
+        }
+
+        // Display Averages
+        System.out.printf("\n\nAverage Waiting Time:"+ avgWT);
+        System.out.printf("\nAverage Turnaround Time:"+ avgTAT);
     }
 }
