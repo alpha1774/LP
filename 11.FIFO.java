@@ -1,37 +1,63 @@
+// Sample Input :
+//Enter number of frames: 2
+// Enter number of pages: 5
+// Enter page reference string:
+// 1 2 3 2 1
+
 import java.util.*;
 
-public class FIFO {
+public class FIFO_PageReplacement {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
-        System.out.print("Frames: ");
-        int F = sc.nextInt();
-        System.out.print("Length of reference string: ");
+
+        // Input: Number of frames
+        System.out.print("Enter number of frames: ");
+        int frames = sc.nextInt();
+
+        // Input: Number of pages
+        System.out.print("Enter number of pages: ");
         int n = sc.nextInt();
-        int[] ref = new int[n];
-        System.out.println("Enter reference string:");
-        for (int i = 0; i < n; i++) ref[i] = sc.nextInt();
 
-        Set<Integer> inFrames = new HashSet<>();
-        Queue<Integer> q = new ArrayDeque<>();
-        int faults = 0;
-
-        for (int p : ref) {
-            if (!inFrames.contains(p)) {
-                faults++;
-                if (inFrames.size() < F) {
-                    inFrames.add(p);
-                    q.add(p);
-                } else {
-                    int victim = q.remove();
-                    inFrames.remove(victim);
-                    inFrames.add(p);
-                    q.add(p);
-                }
-            }
+        int[] pages = new int[n]; // Page reference string
+        System.out.println("Enter page reference string:");
+        for (int i = 0; i < n; i++) {
+            pages[i] = sc.nextInt();
         }
 
-        System.out.println("\nFIFO Page Replacement");
-        System.out.println("Total Page Faults: " + faults);
-        sc.close();
+        int[] frame = new int[frames]; // Frame array
+        Arrays.fill(frame, -1);        // Initialize frames to -1 (empty)
+
+        int pointer = 0;               // FIFO pointer
+        int pageFaults = 0;
+
+        // Page replacement logic
+        for (int page : pages) {
+            boolean found = false;
+
+            // Check if page is already in frame
+            for (int f : frame) {
+                if (f == page) {
+                    found = true;
+                    break;
+                }
+            }
+
+            // If not found, replace using FIFO
+            if (!found) {
+                frame[pointer] = page;
+                pointer = (pointer + 1) % frames;
+                pageFaults++;
+            }
+
+            // Display current frame status
+            System.out.print("Frames: ");
+            for (int f : frame) {
+                System.out.print((f == -1 ? "-" : f) + " ");
+            }
+            System.out.println();
+        }
+
+        // Output total page faults
+        System.out.println("\nTotal Page Faults = " + pageFaults);
     }
 }
