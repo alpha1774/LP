@@ -1,69 +1,84 @@
 import java.util.*;
 
-public class SJFPreemptive {
+class SJFPreemptive {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
 
-        // --- INPUT ---
-        System.out.print("No. of processes: ");
+        // Input: Number of processes
+        System.out.print("Enter number of processes: ");
         int n = sc.nextInt();
-        int[] at = new int[n], bt = new int[n], rt = new int[n];
-        int[] wt = new int[n], tat = new int[n], ct = new int[n];
 
-        System.out.println("Enter AT BT for P1..Pn:");
+        int[] pid = new int[n]; // Process IDs
+        int[] at = new int[n];  // Arrival Times
+        int[] bt = new int[n];  // Burst Times
+        int[] rt = new int[n];  // Remaining Times
+        int[] wt = new int[n];  // Waiting Times
+        int[] tat = new int[n]; // Turnaround Times
+
+        // Input: Process details
         for (int i = 0; i < n; i++) {
+            System.out.print("Process ID: ");
+            pid[i] = sc.nextInt();
+            System.out.print("Arrival Time: ");
             at[i] = sc.nextInt();
+            System.out.print("Burst Time: ");
             bt[i] = sc.nextInt();
-            rt[i] = bt[i];
+            rt[i] = bt[i]; // Initialize remaining time
+            System.out.println();
         }
-        sc.close();
 
-        // --- SRTF CORE ---
-        int done = 0, t = 0, last = -1;
-        StringBuilder order = new StringBuilder(); // execution order with start times
+        int complete = 0, time = 0;
+        int minRemaining, shortest = -1;
+        boolean found;
+        ArrayList<Integer> order = new ArrayList<>();
 
-        while (done < n) {
-            // pick arrived process with smallest remaining time
-            int idx = -1, min = Integer.MAX_VALUE;
+        // SJF Preemptive Scheduling Loop
+        while (complete < n) {
+            minRemaining = Integer.MAX_VALUE;
+            found = false;
+
             for (int i = 0; i < n; i++) {
-                if (at[i] <= t && rt[i] > 0 && rt[i] < min) {
-                    min = rt[i];
-                    idx = i;
+                if (at[i] <= time && rt[i] > 0 && rt[i] < minRemaining) {
+                    minRemaining = rt[i];
+                    shortest = i;
+                    found = true;
                 }
             }
 
-            if (idx == -1) {          // CPU idle
-                t++;
-                last = -1;            // reset so next real run is recorded
+            if (!found) {
+                time++;
                 continue;
             }
 
-            if (idx != last) {        // log context switch
-                order.append("t").append(t).append(":P").append(idx + 1).append(" ");
-                last = idx;
-            }
+            order.add(pid[shortest]); // Record execution order
+            rt[shortest]--;
+            time++;
 
-            rt[idx]--;                // run 1 time unit
-            t++;
-
-            if (rt[idx] == 0) {       // finished now
-                ct[idx]  = t;
-                tat[idx] = ct[idx] - at[idx];
-                wt[idx]  = tat[idx] - bt[idx];
-                done++;
+            if (rt[shortest] == 0) {
+                complete++;
+                int finish = time;
+                tat[shortest] = finish - at[shortest];
+                wt[shortest] = tat[shortest] - bt[shortest];
+                if (wt[shortest] < 0) wt[shortest] = 0;
             }
         }
 
-        // --- OUTPUT ---
-        int sumWT = 0, sumTAT = 0;
+        // Output: Process table
+        double avgWT = 0, avgTAT = 0;
         System.out.println("\nPID\tAT\tBT\tWT\tTAT");
         for (int i = 0; i < n; i++) {
-            sumWT  += wt[i];
-            sumTAT += tat[i];
-            System.out.printf("%d\t%d\t%d\t%d\t%d%n", (i + 1), at[i], bt[i], wt[i], tat[i]);
+            avgWT += wt[i];
+            avgTAT += tat[i];
+            System.out.println(pid[i] + "\t" + at[i] + "\t" + bt[i] + "\t" + wt[i] + "\t" + tat[i]);
         }
-        System.out.printf("Average WT  = %.2f%n", sumWT / (double) n);
-        System.out.printf("Average TAT = %.2f%n", sumTAT / (double) n);
-        System.out.println("Order: " + order.toString());
+
+        // Output: Execution order (Gantt-style)
+        System.out.println("\nExecution Order:");
+        for (int x : order) {
+            System.out.print("P" + x + " ");
+        }
+
+        // Output: Averages
+        System.out.printf("\n\nAverage Waiting Time: %.2f\n", avgWT / n);
+        System.out.printf("Average Turnaround Time: %.2f\n", avgTAT / n);
     }
-}
