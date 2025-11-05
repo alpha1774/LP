@@ -1,90 +1,106 @@
 import java.util.*;
 
-public class RoundRobin {
+class RoundRobin {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
 
-        // Step 1: Take inputs
         System.out.print("Enter number of processes: ");
         int n = sc.nextInt();
-        System.out.print("Enter time quantum: ");
-        int tq = sc.nextInt();
 
-        int[] at = new int[n];  // arrival time
-        int[] bt = new int[n];  // burst time
-        int[] rt = new int[n];  // remaining time
-        int[] wt = new int[n];  // waiting time
-        int[] tat = new int[n]; // turnaround time
-        int[] ct = new int[n];  // completion time
+        int[] pid = new int[n];     // Process IDs
+        int[] at = new int[n];      // Arrival Times
+        int[] bt = new int[n];      // Burst Times
+        int[] rem = new int[n];     // Remaining Times
+        int[] wt = new int[n];      // Waiting Times
+        int[] tat = new int[n];     // Turnaround Times
+        int[] ct = new int[n];      // Completion Times
 
-        System.out.println("Enter Arrival Time and Burst Time:");
+        // Input process details
         for (int i = 0; i < n; i++) {
+            System.out.print("Process ID: ");
+            pid[i] = sc.nextInt();
+            System.out.print("Arrival Time: ");
             at[i] = sc.nextInt();
+            System.out.print("Burst Time: ");
             bt[i] = sc.nextInt();
-            rt[i] = bt[i];
+            rem[i] = bt[i]; // Initialize remaining time
+            System.out.println();
         }
 
-        int time = 0, done = 0;
+        System.out.print("Enter Time Quantum: ");
+        int tq = sc.nextInt();
+
+        int time = 0, completed = 0;
         Queue<Integer> q = new LinkedList<>();
-        q.add(0);
+        boolean[] inQueue = new boolean[n];
+        ArrayList<String> gantt = new ArrayList<>();
 
-        String gantt = "";
-        boolean[] visited = new boolean[n];
-        visited[0] = true;
+        // Add first arrived process to queue
+        for (int i = 0; i < n; i++) {
+            if (at[i] == 0) {
+                q.add(i);
+                inQueue[i] = true;
+                break;
+            }
+        }
 
-        // Step 2: Round Robin logic
-        while (!q.isEmpty()) {
+        // Round Robin Scheduling Loop
+        while (completed < n) {
+            if (q.isEmpty()) {
+                time++;
+                for (int i = 0; i < n; i++) {
+                    if (at[i] <= time && !inQueue[i] && rem[i] > 0) {
+                        q.add(i);
+                        inQueue[i] = true;
+                        break;
+                    }
+                }
+                continue;
+            }
+
             int i = q.poll();
+            int exec = Math.min(tq, rem[i]);
+            rem[i] -= exec;
+            time += exec;
+            gantt.add("P" + pid[i]);
 
-            // execute process for time quantum or remaining time
-            if (rt[i] > tq) {
-                gantt += "P" + (i + 1) + " ";
-                time += tq;
-                rt[i] -= tq;
+            // Check for new arrivals during execution
+            for (int j = 0; j < n; j++) {
+                if (at[j] <= time && rem[j] > 0 && !inQueue[j]) {
+                    q.add(j);
+                    inQueue[j] = true;
+                }
+            }
+
+            // Re-add process if not completed
+            if (rem[i] > 0) {
+                q.add(i);
             } else {
-                gantt += "P" + (i + 1) + " ";
-                time += rt[i];
-                rt[i] = 0;
-                done++;
+                completed++;
                 ct[i] = time;
                 tat[i] = ct[i] - at[i];
                 wt[i] = tat[i] - bt[i];
             }
-
-            // check newly arrived processes
-            for (int j = 0; j < n; j++) {
-                if (at[j] <= time && rt[j] > 0 && !visited[j]) {
-                    q.add(j);
-                    visited[j] = true;
-                }
-            }
-
-            // re-add same process if it’s not finished
-            if (rt[i] > 0) q.add(i);
-
-            // if queue empty, jump to next process
-            if (q.isEmpty()) {
-                for (int j = 0; j < n; j++) {
-                    if (rt[j] > 0) {
-                        q.add(j);
-                        visited[j] = true;
-                        break;
-                    }
-                }
-            }
         }
 
-        // Step 3: Print results
-        System.out.println("\nPID\tAT\tBT\tWT\tTAT\tCT");
-        int totalWT = 0, totalTAT = 0;
+        // Output results
+        double avgWT = 0, avgTAT = 0;
+        System.out.println("\nPID\tAT\tBT\tWT\tTAT");
         for (int i = 0; i < n; i++) {
-            totalWT += wt[i];
-            totalTAT += tat[i];
-            System.out.println((i + 1) + "\t" + at[i] + "\t" + bt[i] + "\t" + wt[i] + "\t" + tat[i] + "\t" + ct[i]);
+            avgWT += wt[i];
+            avgTAT += tat[i];
+            System.out.println(pid[i] + "\t" + at[i] + "\t" + bt[i] + "\t" + wt[i] + "\t" + tat[i]);
         }
 
-        System.out.printf("\nAverage WT = %.2f\n", totalWT / (float) n);
-        System.out.printf("Average TAT = %.2f\n", totalTAT / (float) n);
-        System.out.println("\nGantt Chart: " + gantt);
+        // Gantt Chart
+        System.out.println("\nGantt Chart:");
+        for (String g : gantt) {
+            System.out.print("| " + g + " ");
+        }
+        System.out.println("|");
+
+        // Averages
+        System.out.printf("\nAverage Waiting Time:"+ avgWT / n);
+        System.out.printf("\nAverage Turnaround Time:"+ avgTAT / n);
     }
 }
